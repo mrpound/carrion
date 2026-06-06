@@ -8,7 +8,6 @@ if [ -z "$1" ]; then
 fi
 
 INPUT="$1"
-# Strip leading 1 if 11 digits, then re-prepend to normalize
 if [[ ${#INPUT} -eq 11 && "${INPUT:0:1}" == "1" ]]; then
   PHONE_NUMBER="$INPUT"
 elif [[ ${#INPUT} -eq 10 ]]; then
@@ -18,15 +17,16 @@ else
 fi
 
 if [ -f .env ] && { [ -z "$TWILIO_ACCOUNT_SID" ] || [ -z "$TWILIO_AUTH_TOKEN" ]; }; then
-  # Source .env file, ignoring comments and empty lines
-  set -a  # automatically export all variables
-  while IFS= read -r line; do
-    if [[ "$line" =~ ^[[:space:]]*# ]] || [[ -z "$line" ]]; then
+  set -a
+  while IFS='=' read -r key value; do
+    if [[ "$key" =~ ^[[:space:]]*# ]] || [[ -z "$key" ]]; then
       continue
     fi
-    eval "export $line"
+    value="${value%\"}"
+    value="${value#\"}"
+    export "$key=$value"
   done < .env
-  set +a  # disable automatic export
+  set +a
 fi
 
 if [ -z "$TWILIO_ACCOUNT_SID" ]; then
@@ -51,7 +51,6 @@ AUTH_TOKEN="$TWILIO_AUTH_TOKEN"
 RESPONSE=$(curl -s -X GET "https://lookups.twilio.com/v1/PhoneNumbers/%2B${PHONE_NUMBER}?Type=carrier" \
   -u "${ACCOUNT_SID}:${AUTH_TOKEN}")
 
-# Parse fields
 PHONE=$(echo "$RESPONSE" | python3 -c "import sys,json; d=json.load(sys.stdin); print(d.get('phone_number','N/A'))")
 NATIONAL=$(echo "$RESPONSE" | python3 -c "import sys,json; d=json.load(sys.stdin); print(d.get('national_format','N/A'))")
 COUNTRY=$(echo "$RESPONSE" | python3 -c "import sys,json; d=json.load(sys.stdin); print(d.get('country_code','N/A'))")
