@@ -1,13 +1,18 @@
 # carrion
 
-Phone number lookup tool using the Twilio API to analyze carrier information and assess VoIP/spam risk.
+Twilio-powered phone number toolkit with carrier lookup and calling capabilities.
 
+## Scripts
+
+- **`carrion.sh`** - Phone number lookup tool to analyze carrier information and assess VoIP/spam risk
+- **`caller.sh`** - Simple calling script to make test calls using Twilio
 
 ## Features
 
 - Phone number validation and formatting
 - Carrier information lookup (name, type, MCC, MNC)
 - VoIP and spam risk assessment
+- Test calling functionality
 - Pretty terminal output
 
 ## Setup
@@ -33,9 +38,12 @@ Create a `.env` file in the same directory:
 ```bash
 TWILIO_ACCOUNT_SID="your_account_sid"
 TWILIO_AUTH_TOKEN="your_auth_token"
+TWILIO_FROM_NUMBER="+1234567890"  # Required for caller.sh
 ```
 
 ## Usage
+
+### Phone Number Lookup (`carrion.sh`)
 
 ```bash
 ./carrion.sh <phone_number>
@@ -47,13 +55,35 @@ TWILIO_AUTH_TOKEN="your_auth_token"
 ./carrion.sh 14704709474     # 11-digit with country code
 ```
 
+### Making Test Calls (`caller.sh`)
+
+```bash
+./caller.sh <phone_number>
+```
+
+**Examples:**
+```bash
+./caller.sh 4704709474       # Makes a test call saying "Hello"
+./caller.sh 14704709474      # 11-digit format also supported
+```
+
 ## Output
 
-The tool provides:
+### carrion.sh Output
+
+The lookup tool provides:
 
 - **Number Info**: E.164 format, national format, country code
 - **Carrier Info**: Name, type, mobile codes, error codes
 - **Risk Assessment**: VoIP/spam risk level with reasoning
+
+### caller.sh Output
+
+The calling script shows:
+
+- Call details (to/from numbers)
+- Raw Twilio API response
+- Parsed call information (SID, status) or error details
 
 Risk levels:
 - 🟢 **LOW**: Standard mobile or landline
