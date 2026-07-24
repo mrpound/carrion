@@ -30,3 +30,23 @@ def test_tollfree():
 
 def test_unknown():
     assert resolve("999", "CA").status == "UNKNOWN"
+
+
+def test_west_virginia_does_not_match_virginia_code():
+    # 540 is a Virginia area code; "West Virginia" must NOT match
+    assert resolve("540", "Charleston, West Virginia").status == "MISMATCH"
+
+
+def test_west_virginia_matches_wv_code():
+    # 304 is a West Virginia area code
+    assert resolve("304", "Charleston, West Virginia").status == "MATCH"
+
+
+def test_lowercase_ok_not_matched_as_oklahoma():
+    # 405 is Oklahoma (OK); the lowercase word "ok" in prose must not match
+    assert resolve("405", "remote is ok with me").status == "MISMATCH"
+
+
+def test_lowercase_in_not_matched_as_indiana():
+    # 317 is Indiana (IN); the lowercase preposition "in" must not match
+    assert resolve("317", "based in Chicago").status == "MISMATCH"

@@ -178,11 +178,21 @@ def resolve(area_code: str, claimed_location: str | None) -> GeoResult:
         return GeoResult("UNKNOWN", None, None)
     name = STATE_NAMES.get(abbr, abbr)
 
-    claim = (claimed_location or "").strip().lower()
+    claim = (claimed_location or "").strip()
     if not claim:
         return GeoResult("KNOWN", abbr, name)
 
-    abbr_hit = re.search(r"\b" + re.escape(abbr.lower()) + r"\b", claim) is not None
-    name_hit = name.lower() in claim
+    # Abbreviation: match as an uppercase whole word. State codes are
+    # conventionally uppercase (e.g. "Atlanta, GA"); matching case-sensitively
+    # prevents common lowercase words ("in", "or", "ok", "la") from spuriously
+    # matching two-letter state codes.
+    abbr_hit = re.search(r"\b" + re.escape(abbr) + r"\b", claim) is not None
+
+    # Full name: whole word, case-insensitive. Guard the Virginia / West
+    # Virginia substring collision so a VA code doesn't match "West Virginia".
+    name_hit = re.search(r"\b" + re.escape(name) + r"\b", claim, re.I) is not None
+    if name == "Virginia" and re.search(r"\bwest\s+virginia\b", claim, re.I):
+        name_hit = False
+
     status = "MATCH" if (abbr_hit or name_hit) else "MISMATCH"
     return GeoResult(status, abbr, name)
