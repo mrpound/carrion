@@ -1,0 +1,10 @@
+.venv/
+.git/
+.claude/
+docs/
+tests/
+vetting-log.tsv
+.env
+__pycache__/
+*.pyc
+resumes/

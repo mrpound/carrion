@@ -1,0 +1,7 @@
+services:
+  carrion:
+    build: .
+    env_file: .env
+    volumes:
+      - ./resumes:/data
+    command: carrion-vet /data
