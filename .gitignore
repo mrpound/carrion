@@ -1,1 +1,5 @@
 .env
+vetting-log.tsv
+.venv/
+__pycache__/
+*.pyc

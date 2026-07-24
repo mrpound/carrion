@@ -1,100 +1,93 @@
 # carrion
 
-Twilio-powered phone number toolkit with carrier lookup and calling capabilities.
+Twilio-powered vetting toolkit: phone-number carrier/risk lookup and resume-PDF
+ingestion for screening applicants.
 
-## Scripts
+carrion is a `uv`-managed Python package exposing two commands:
 
-- **`carrion.sh`** - Phone number lookup tool to analyze carrier information and assess VoIP/spam risk
-- **`caller.sh`** - Simple calling script to make test calls using Twilio
-
-## Features
-
-- Phone number validation and formatting
-- Carrier information lookup (name, type, MCC, MNC)
-- VoIP and spam risk assessment
-- Test calling functionality
-- Pretty terminal output
+- **`carrion`** — phone-number lookup: Twilio Lookup v2 (carrier / line-type
+  intelligence + SMS-pumping risk), area-code vs. claimed-location geo check,
+  and a composite risk verdict.
+- **`carrion-vet`** — resume-PDF ingestion: extracts contacts + a work-experience
+  table, runs the phone lookup, applies offline cross-checks, and prints/logs a
+  composite vetting dossier.
 
 ## Setup
 
-### Prerequisites
+Install/sync the environment once (requires [uv](https://docs.astral.sh/uv/)):
 
-- `curl` (for API requests)
-- `python3` (for JSON parsing)
-- Twilio account with API credentials
-
-### Configuration
-
-Set your Twilio credentials using either method:
-
-**Option 1: Environment Variables**
 ```bash
-export TWILIO_ACCOUNT_SID="your_account_sid"
-export TWILIO_AUTH_TOKEN="your_auth_token"
+uv sync
 ```
 
-**Option 2: .env File**
-Create a `.env` file in the same directory:
+### Credentials (`.env`)
+
 ```bash
-TWILIO_ACCOUNT_SID="your_account_sid"
-TWILIO_AUTH_TOKEN="your_auth_token"
-TWILIO_FROM_NUMBER="+1234567890"  # Required for caller.sh
+TWILIO_ACCOUNT_SID=your_account_sid
+TWILIO_AUTH_TOKEN=your_auth_token
+ANTHROPIC_API_KEY=sk-ant-...   # optional; enables resume experience extraction
 ```
+
+Environment variables take precedence over `.env`.
 
 ## Usage
 
-### Phone Number Lookup (`carrion.sh`)
+### Phone lookup
 
 ```bash
-./carrion.sh <phone_number>
+uv run carrion 4045551234 "Atlanta, GA" --full
+# or via the compatibility shim:
+./carrion.sh 4045551234 "Atlanta, GA" --full
 ```
 
-**Examples:**
+- `<phone_number>` — 10-digit (country code added automatically) or 11-digit.
+- `[claimed_location]` — optional; cross-checks the number's area code against
+  the claimed location (a mismatch is a "verify" flag, not an auto-fail — people
+  relocate).
+- `--full` — interactive vetting worksheet (LinkedIn / role / resume flags) that
+  folds into the composite verdict.
+
+### Resume PDF vetting
+
 ```bash
-./carrion.sh 4704709474      # 10-digit (country code added automatically)
-./carrion.sh 14704709474     # 11-digit with country code
+uv run carrion-vet path/to/resume.pdf
+uv run carrion-vet path/to/resume.pdf --no-log   # skip writing to vetting-log.tsv
 ```
 
-### Making Test Calls (`caller.sh`)
+Prints a dossier (candidate + contacts + experience table + carrier/risk +
+offline-check flags + composite verdict). Non-interactive.
+
+## How the vetting works
+
+The composite verdict combines the phone risk (High/Medium/Low) with a count of
+flags. It is a **decision aid, not a verdict** — the itemized reasons are what
+matter, and a human makes the call.
+
+Offline cross-checks (`carrion-vet`, no network beyond the phone lookup):
+
+- Area code vs. claimed location (geo mismatch).
+- Missing/absent LinkedIn URL.
+- Email domain vs. listed employers (informational).
+- Overlapping or large-gap employment date ranges.
+
+Phone risk flags a number High for: invalid, VoIP line type, known VoIP/virtual
+carrier, non-US number, SMS-pumping block-list, or a high pumping-risk score;
+Medium for elevated pumping score or unavailable carrier data.
+
+## Privacy notes
+
+- `carrion-vet` sends the resume's **text** to the Anthropic API to extract the
+  name and experience table. Phone, email, and LinkedIn are parsed locally.
+- `vetting-log.tsv` contains applicant PII and is gitignored — do not commit it.
+- `.env` is gitignored.
+
+## Development
 
 ```bash
-./caller.sh <phone_number>
+uv run pytest        # run the test suite
 ```
 
-**Examples:**
-```bash
-./caller.sh 4704709474       # Makes a test call saying "Hello"
-./caller.sh 14704709474      # 11-digit format also supported
-```
+## Note
 
-## Output
-
-### carrion.sh Output
-
-The lookup tool provides:
-
-- **Number Info**: E.164 format, national format, country code
-- **Carrier Info**: Name, type, mobile codes, error codes
-- **Risk Assessment**: VoIP/spam risk level with reasoning
-
-### caller.sh Output
-
-The calling script shows:
-
-- Call details (to/from numbers)
-- Raw Twilio API response
-- Parsed call information (SID, status) or error details
-
-Risk levels:
-- 🟢 **LOW**: Standard mobile or landline
-- 🟡 **MEDIUM**: Potential risk indicators
-- 🔴 **HIGH**: VoIP or known virtual providers
-
-## Risk Assessment
-
-Will flag numbers as high risk if they are:
-- VoIP type numbers
-- From known virtual providers (Twilio, Google Voice, TextNow, etc.)
-
-## Requirements
-- Valid Twilio account credentials
+`caller.sh` (Twilio test-call script) is a separate, unrelated utility and is not
+part of the carrion package.
