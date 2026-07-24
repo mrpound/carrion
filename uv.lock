@@ -50,6 +50,7 @@ source = { editable = "." }
 dependencies = [
     { name = "anthropic" },
     { name = "httpx" },
+    { name = "pydantic" },
     { name = "pypdf" },
 ]
 
@@ -62,6 +63,7 @@ dev = [
 requires-dist = [
     { name = "anthropic", specifier = ">=0.40" },
     { name = "httpx", specifier = ">=0.27" },
+    { name = "pydantic", specifier = ">=2.0" },
     { name = "pypdf", specifier = ">=4.0" },
 ]
 
