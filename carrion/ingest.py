@@ -20,8 +20,8 @@ _PHONE_RE = re.compile(
     r"(\(?\d{3}\)?[\s.-]?\d{3}[\s.-]?\d{4})")
 _EMAIL_RE = re.compile(r"[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}")
 _LINKEDIN_RE = re.compile(r"(?:https?://)?(?:www\.)?linkedin\.com/[^\s|]+", re.I)
-# "City, ST" — two-letter state after a comma
-_LOCATION_RE = re.compile(r"([A-Z][A-Za-z.\s]+,\s*[A-Z]{2})\b")
+# "City, ST" on a single line — city allows letters/periods/spaces but not newlines
+_LOCATION_RE = re.compile(r"([A-Z][A-Za-z. ]+,[ ]*[A-Z]{2})\b")
 
 
 def extract_text(pdf_path: str) -> str:

@@ -30,3 +30,7 @@ def test_missing_fields_are_none():
 def test_require_text_raises_on_empty():
     with pytest.raises(NoTextError):
         require_text("   \n  ")
+
+
+def test_location_is_single_line():
+    assert extract_contacts(SAMPLE).location == "Atlanta, GA"
