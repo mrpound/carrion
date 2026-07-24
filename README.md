@@ -57,6 +57,35 @@ uv run carrion-vet path/to/resume.pdf --no-log   # skip writing to vetting-log.t
 Prints a dossier (candidate + contacts + experience table + carrier/risk +
 offline-check flags + composite verdict). Non-interactive.
 
+## Docker
+
+Build the image:
+
+    docker build -t carrion .
+
+Batch-vet a local folder of resumes (the log is written into that same folder):
+
+    docker run --rm --env-file .env -v "$PWD/resumes:/data" carrion
+
+Vet a single resume in the mounted folder:
+
+    docker run --rm --env-file .env -v "$PWD/resumes:/data" carrion carrion-vet /data/jane.pdf
+
+Run a phone lookup instead of the default batch:
+
+    docker run --rm --env-file .env carrion carrion 4045551234 "Atlanta, GA"
+
+Or use Compose (mounts `./resumes` and reads `.env` automatically):
+
+    docker compose run --rm carrion
+
+Notes:
+- `.env` must contain `TWILIO_ACCOUNT_SID` / `TWILIO_AUTH_TOKEN` (and optional
+  `ANTHROPIC_API_KEY` for resume experience extraction).
+- `/data` is read-write: `vetting-log.tsv` is written back into it so the record
+  persists on your host.
+- `carrion-vet /data` accepts a directory (batch every PDF) or a single PDF path.
+
 ## How the vetting works
 
 The composite verdict combines the phone risk (High/Medium/Low) with a count of

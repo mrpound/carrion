@@ -1,3 +1,4 @@
+import os
 import sys
 from datetime import datetime
 
@@ -56,21 +57,11 @@ def main_lookup(argv: list[str] | None = None) -> int:
     return 0
 
 
-def main_vet(argv: list[str] | None = None) -> int:
-    argv = list(sys.argv[1:] if argv is None else argv)
-    no_log = "--no-log" in argv
-    argv = [a for a in argv if a != "--no-log"]
-    if not argv:
-        print("Usage: carrion-vet <resume.pdf> [--no-log]")
-        return 1
-
-    pdf_path = argv[0]
-    config = load_config()
-
+def vet_one(pdf_path: str, config, *, log_path: str, no_log: bool) -> int:
     try:
         text = require_text(extract_text(pdf_path))
     except NoTextError as exc:
-        print(f"Error: {exc}")
+        print(f"Error ({pdf_path}): {exc}")
         return 2
 
     contacts = extract_contacts(text)
@@ -95,5 +86,40 @@ def main_vet(argv: list[str] | None = None) -> int:
         flags=flags, verdict=verdict, verdict_points=points, source="vet")
     print(render(dossier))
     if not no_log:
-        log(dossier, timestamp=_now())
+        log(dossier, timestamp=_now(), path=log_path)
     return 0
+
+
+def _pdfs_in(directory: str) -> list[str]:
+    return sorted(
+        os.path.join(directory, name)
+        for name in os.listdir(directory)
+        if name.lower().endswith(".pdf")
+    )
+
+
+def main_vet(argv: list[str] | None = None) -> int:
+    argv = list(sys.argv[1:] if argv is None else argv)
+    no_log = "--no-log" in argv
+    argv = [a for a in argv if a != "--no-log"]
+    if not argv:
+        print("Usage: carrion-vet <resume.pdf | directory> [--no-log]")
+        return 1
+
+    target = argv[0]
+    config = load_config()
+
+    if os.path.isdir(target):
+        pdfs = _pdfs_in(target)
+        if not pdfs:
+            print(f"No PDF files found in {target}")
+            return 2
+        log_path = os.path.join(target, "vetting-log.tsv")
+        for i, pdf in enumerate(pdfs):
+            if i:
+                print()
+            vet_one(pdf, config, log_path=log_path, no_log=no_log)
+        return 0
+
+    log_path = os.path.join(os.path.dirname(target) or ".", "vetting-log.tsv")
+    return vet_one(target, config, log_path=log_path, no_log=no_log)
